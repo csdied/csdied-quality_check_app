@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quality Check - Auditoría de Encuestas</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f5f7;
+    color: #1d1d1f;
+    line-height: 1.5;
+    padding: 24px;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 28px; margin-bottom: 8px; }
+  .subtitle { color: #6e6e73; margin-bottom: 32px; }
+
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .card h2 { font-size: 18px; margin-bottom: 12px; }
+
+  .upload-area {
+    border: 2px dashed #c7c7cc;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .upload-area:hover, .upload-area.drag {
+    border-color: #007aff;
+    background: #f0f7ff;
+  }
+  .upload-area input { display: none; }
+  .upload-icon { font-size: 36px; margin-bottom: 8px; }
+
+  .controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .control-group { display: flex; align-items: center; gap: 8px; }
+  label { font-size: 14px; color: #3c3c43; }
+  input[type=number] {
+    width: 70px;
+    padding: 6px 10px;
+    border: 1px solid #c7c7cc;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  button, .btn {
+    background: #007aff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+  }
+  button:hover, .btn:hover { background: #0056cc; }
+  button:disabled { background: #c7c7cc; cursor: not-allowed; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .stat {
+    background: #f5f5f7;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-num { font-size: 32px; font-weight: 600; }
+  .stat-label { font-size: 12px; color: #6e6e73; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat.red .stat-num { color: #d32f2f; }
+  .stat.yellow .stat-num { color: #f57c00; }
+  .stat.green .stat-num { color: #388e3c; }
+  .stat.blue .stat-num { color: #007aff; }
+
+  .flag-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0;
+    font-size: 14px;
+  }
+  .flag-name { width: 200px; color: #3c3c43; }
+  .flag-bar-bg { flex: 1; height: 18px; background: #e5e5ea; border-radius: 9px; overflow: hidden; }
+  .flag-bar-fill { height: 100%; background: #007aff; border-radius: 9px; }
+  .flag-count { width: 50px; text-align: right; font-weight: 500; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e5e5ea; }
+  th { background: #f5f5f7; font-weight: 600; color: #3c3c43; position: sticky; top: 0; }
+  tr.alta { background: #ffebee; }
+  tr.revisar { background: #fff8e1; }
+  .motivos { color: #6e6e73; font-size: 12px; max-width: 400px; }
+
+  .hidden { display: none; }
+  .loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007aff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+  .error { color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 8px; }
+  .scroll { max-height: 500px; overflow-y: auto; }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .pill.alta { background: #ffcdd2; color: #c62828; }
+  .pill.revisar { background: #fff9c4; color: #f57f17; }
+  .pill.ok { background: #c8e6c9; color: #2e7d32; }
+  .pill.limpo { background: #e0f2f1; color: #00695c; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🔍 Quality Check</h1>
+  <p class="subtitle">Auditoria de qualidade de respostas — pesquisas QuestionPro / SurveyMonkey</p>
+
+  <div class="card" id="upload-card">
+    <h2>1. Sube tu archivo .xlsx</h2>
+    <label class="upload-area" id="drop-zone">
+      <input type="file" id="file-input" accept=".xlsx,.xls">
+      <div class="upload-icon">📊</div>
+      <div><strong>Clic aquí o arrastra el archivo</strong></div>
+      <div style="font-size:13px;color:#6e6e73;margin-top:4px;" id="filename">Ningún archivo seleccionado</div>
+    </label>
+
+    <div class="controls">
+      <div class="control-group">
+        <label>Tiempo mínimo aceptable (min):</label>
+        <input type="number" id="time-threshold" value="8" min="1" max="60">
+      </div>
+      <button id="process-btn" disabled>Analizar</button>
+    </div>
+  </div>
+
+  <div id="status" class="hidden"></div>
+
+  <div id="results" class="hidden">
+
+    <div class="card">
+      <h2>📊 Resumen general</h2>
+      <div class="stats-grid" id="stats-grid"></div>
+      <div style="text-align:right;margin-top:16px;">
+        <a class="btn" id="download-btn" href="#">⬇️ Descargar Excel auditado</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🚩 Distribución de banderas</h2>
+      <div id="flags-detail"></div>
+    </div>
+
+    <div class="card">
+      <h2>🤖 Marcas reconocidas como válidas</h2>
+      <p style="font-size:13px;color:#6e6e73;margin-bottom:8px;">
+        El sistema aprende las marcas de las propias respuestas + lista internacional conocida.
+        <span id="wl-meta"></span>
+      </p>
+      <div id="whitelist" style="font-size:13px;line-height:1.8;"></div>
+    </div>
+
+    <div class="card">
+      <h2>🔴 Top 20 más sospechosos</h2>
+      <p style="font-size:13px;color:#6e6e73;margin-bottom:12px;">
+        Estos IDs deberías eliminar/revisar primero en la plataforma.
+      </p>
+      <div class="scroll">
+        <table id="suspects-table">
+          <thead>
+            <tr>
+              <th>ID respuesta</th>
+              <th>IP</th>
+              <th>Tiempo (min)</th>
+              <th>Clasificación</th>
+              <th>Score</th>
+              <th>Motivos</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const fileInput = document.getElementById('file-input');
+const dropZone = document.getElementById('drop-zone');
+const filename = document.getElementById('filename');
+const processBtn = document.getElementById('process-btn');
+const statusDiv = document.getElementById('status');
+const resultsDiv = document.getElementById('results');
+let selectedFile = null;
+
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files.length) {
+    selectedFile = e.target.files[0];
+    filename.textContent = selectedFile.name;
+    processBtn.disabled = false;
+  }
+});
+
+['dragover', 'dragenter'].forEach(ev =>
+  dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add('drag'); })
+);
+['dragleave', 'drop'].forEach(ev =>
+  dropZone.addEventListener(ev, () => dropZone.classList.remove('drag'))
+);
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  if (e.dataTransfer.files.length) {
+    selectedFile = e.dataTransfer.files[0];
+    filename.textContent = selectedFile.name;
+    processBtn.disabled = false;
+  }
+});
+
+processBtn.addEventListener('click', async () => {
+  if (!selectedFile) return;
+  processBtn.disabled = true;
+  statusDiv.className = 'card';
+  statusDiv.innerHTML = '<span class="loading"></span> Analizando archivo... esto puede tomar 10-30 segundos.';
+
+  const fd = new FormData();
+  fd.append('file', selectedFile);
+  fd.append('time_threshold', document.getElementById('time-threshold').value);
+
+  try {
+    const r = await fetch('/upload', { method: 'POST', body: fd });
+    const data = await r.json();
+    if (!r.ok) {
+      statusDiv.innerHTML = '<div class="error">❌ ' + (data.error || 'Error desconocido') + '</div>';
+      processBtn.disabled = false;
+      return;
+    }
+    statusDiv.classList.add('hidden');
+    renderResults(data);
+  } catch (err) {
+    statusDiv.innerHTML = '<div class="error">❌ Error de red: ' + err.message + '</div>';
+    processBtn.disabled = false;
+  }
+});
+
+function renderResults(data) {
+  resultsDiv.classList.remove('hidden');
+
+  // Stats grid
+  const cls = data.classificacoes;
+  const sg = document.getElementById('stats-grid');
+  sg.innerHTML = `
+    <div class="stat blue"><div class="stat-num">${data.total}</div><div class="stat-label">Total</div></div>
+    <div class="stat red"><div class="stat-num">${cls['🔴 Alta suspeita'] || 0}</div><div class="stat-label">Alta sospecha</div></div>
+    <div class="stat yellow"><div class="stat-num">${cls['🟡 Revisar'] || 0}</div><div class="stat-label">Revisar</div></div>
+    <div class="stat"><div class="stat-num">${cls['🟢 OK con observações'] || cls['🟢 OK com observações'] || 0}</div><div class="stat-label">OK con notas</div></div>
+    <div class="stat green"><div class="stat-num">${cls['✅ Limpo'] || 0}</div><div class="stat-label">Limpios</div></div>
+  `;
+
+  // Download
+  document.getElementById('download-btn').href = '/download/' + data.job_id;
+
+  // Flags detail
+  const flagLabels = {
+    flag_ip_duplicado: 'IPs duplicadas',
+    flag_tempo_curto: 'Tiempo < ' + data.tempo_minimo_min + ' min',
+    flag_marca_oleo: 'Marca de aceite/automotriz',
+    flag_gibberish: 'Texto sin sentido',
+    flag_lugar_nao_marca: 'Lugar/institución como marca',
+    flag_so_simbolos: 'Sólo símbolos',
+    flag_muitas_marcas_raras: '3+ marcas raras',
+    flag_copy_paste: 'Copy-paste entre campos',
+  };
+  const fd2 = document.getElementById('flags-detail');
+  const maxFlag = Math.max(...Object.values(data.flags));
+  fd2.innerHTML = Object.entries(data.flags).map(([k, v]) => {
+    const pct = maxFlag ? (v / maxFlag * 100) : 0;
+    return `<div class="flag-bar">
+      <div class="flag-name">${flagLabels[k] || k}</div>
+      <div class="flag-bar-bg"><div class="flag-bar-fill" style="width:${pct}%"></div></div>
+      <div class="flag-count">${v}</div>
+    </div>`;
+  }).join('');
+
+  // Whitelist
+  document.getElementById('wl-meta').textContent =
+    `Marcas reconocidas: ${data.whitelist_size}.`;
+  document.getElementById('whitelist').innerHTML =
+    data.whitelist_sample.map(b => `<span class="pill ok">${b}</span>`).join(' ');
+
+  // Suspects table
+  const tbody = document.querySelector('#suspects-table tbody');
+  tbody.innerHTML = data.top_suspeitos.map(r => {
+    let cls = '';
+    let pillCls = 'limpo';
+    if (r.classificacao && r.classificacao.includes('Alta')) { cls = 'alta'; pillCls = 'alta'; }
+    else if (r.classificacao && r.classificacao.includes('Revisar')) { cls = 'revisar'; pillCls = 'revisar'; }
+    else if (r.classificacao && r.classificacao.includes('OK')) { pillCls = 'ok'; }
+    return `<tr class="${cls}">
+      <td>${r['ID de respuesta'] || ''}</td>
+      <td>${r['Dirección IP'] || ''}</td>
+      <td>${r['Tiempo (min)'] || ''}</td>
+      <td><span class="pill ${pillCls}">${r.classificacao || ''}</span></td>
+      <td><strong>${r.score_suspeita || 0}</strong></td>
+      <td class="motivos">${r.motivos || ''}</td>
+    </tr>`;
+  }).join('');
+
+  processBtn.disabled = false;
+  resultsDiv.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
