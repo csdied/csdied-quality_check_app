@@ -162,7 +162,7 @@ def classify_brand_response(text, whitelist):
     s = normalize(raw)
 
     if is_only_symbols(raw):
-        return ("only_symbols", f"Só símbolos: '{raw[:20]}'")
+        return ("only_symbols", f"Sólo símbolos: '{raw[:20]}'")
 
     if s in NON_ANSWERS:
         return ("non_answer", "")
@@ -174,45 +174,39 @@ def classify_brand_response(text, whitelist):
     for known in KNOWN_VALID_BRANDS:
         if s == known or fuzzy_similar(s, known, 0.85):
             return ("ok", "")
-        # marca composta dentro do texto: "condones prudence", "ky jelly"
         if known in s and len(known) >= 3:
             return ("ok", "")
 
-    # Lista negra: marca de óleo automotivo mencionada como camisinha/lubrificante.
-    # IMPORTANTE: match exato ou palavra-inteira pra não confundir 'Sliquid' com 'liqui'.
+    # Lista negra: marca de óleo automotivo
     for bad in BLACKLIST_BRANDS:
         if s == bad:
-            return ("blacklist_oil", f"Marca de óleo automotivo: '{raw}'")
-        # palavra inteira dentro do texto, não substring solta
+            return ("blacklist_oil", f"Marca de aceite automotriz: '{raw}'")
         if re.search(rf"\b{re.escape(bad)}\b", s):
-            return ("blacklist_oil", f"Marca de óleo automotivo: '{raw}'")
-        # fuzzy só se a string toda for similar (não substring)
+            return ("blacklist_oil", f"Marca de aceite automotriz: '{raw}'")
         if fuzzy_similar(s, bad, 0.90):
-            return ("blacklist_oil", f"Marca de óleo automotivo: '{raw}'")
+            return ("blacklist_oil", f"Marca de aceite automotriz: '{raw}'")
 
     # Lugares mencionados como marca
     for place in NON_BRAND_PLACES:
         if place in s:
-            return ("place_not_brand", f"Lugar/instituição, não é marca: '{raw}'")
+            return ("place_not_brand", f"Lugar/institución, no es marca: '{raw}'")
 
     if is_gibberish(raw):
-        return ("gibberish", f"Texto sem sentido: '{raw}'")
+        return ("gibberish", f"Texto sin sentido: '{raw}'")
 
-    # Resposta muito curta tipo "a", "xy"
-    if len(s) <= 2 and s not in {"ky", "m"}:  # K-Y e M são exceções
-        return ("too_short", f"Resposta muito curta: '{raw}'")
+    if len(s) <= 2 and s not in {"ky", "m"}:
+        return ("too_short", f"Respuesta muy corta: '{raw}'")
 
-    # Match com whitelist (exato ou fuzzy)
+    # Match com whitelist
     if s in whitelist:
         return ("ok", "")
     for valid in whitelist:
         if fuzzy_similar(s, valid, 0.82):
-            return ("ok", "")  # typo de marca conhecida
-        if valid in s and len(valid) >= 4:  # "condones prudence" → prudence
+            return ("ok", "")
+        if valid in s and len(valid) >= 4:
             return ("ok", "")
 
-    # Marca não reconhecida que aparece pouco
-    return ("suspicious_rare", f"Marca não reconhecida: '{raw}'")
+    return ("suspicious_rare", f"Marca no reconocida: '{raw}'")
 
 
 def detect_duplicate_text_across_questions(row, brand_cols):
@@ -337,13 +331,13 @@ def analyze(df_raw, time_threshold_min=8, brand_col_indices=None):
 
         # Classificação final
         if score >= 40:
-            flags['classificacao'] = '🔴 Alta suspeita'
+            flags['classificacao'] = '🔴 Alta sospecha'
         elif score >= 20:
             flags['classificacao'] = '🟡 Revisar'
         elif score > 0:
-            flags['classificacao'] = '🟢 OK com observações'
+            flags['classificacao'] = '🟢 OK con observaciones'
         else:
-            flags['classificacao'] = '✅ Limpo'
+            flags['classificacao'] = '✅ Limpio'
 
         flags['motivos'] = ' | '.join(bad_brands[:5])  # limita pra não ficar gigante
         results.append(flags)
