@@ -1,158 +1,413 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quality Check - Auditoría de Encuestas</title>
+<title>Quality Check — Auditoría de Encuestas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #f5f5f7;
-    color: #1d1d1f;
-    line-height: 1.5;
-    padding: 24px;
+
+  :root {
+    --bg: #0f172a;
+    --bg-card: #ffffff;
+    --bg-soft: #f8fafc;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-soft: #eef2ff;
+    --red: #dc2626;
+    --red-soft: #fee2e2;
+    --yellow: #d97706;
+    --yellow-soft: #fef3c7;
+    --green: #059669;
+    --green-soft: #d1fae5;
+    --blue: #2563eb;
+    --blue-soft: #dbeafe;
   }
-  .container { max-width: 1200px; margin: 0 auto; }
-  h1 { font-size: 28px; margin-bottom: 8px; }
-  .subtitle { color: #6e6e73; margin-bottom: 32px; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: 32px 16px;
+  }
+
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+  .header p { color: var(--text-muted); font-size: 15px; }
 
   .card {
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
   }
-  .card h2 { font-size: 18px; margin-bottom: 12px; }
+  .card h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card h2 .badge {
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-weight: 500;
+  }
 
+  /* Upload */
   .upload-area {
-    border: 2px dashed #c7c7cc;
-    border-radius: 8px;
-    padding: 40px;
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 40px 20px;
     text-align: center;
     transition: all 0.2s;
     cursor: pointer;
+    background: var(--bg-soft);
+    display: block;
   }
   .upload-area:hover, .upload-area.drag {
-    border-color: #007aff;
-    background: #f0f7ff;
+    border-color: var(--primary);
+    background: var(--primary-soft);
   }
   .upload-area input { display: none; }
-  .upload-icon { font-size: 36px; margin-bottom: 8px; }
+  .upload-icon { font-size: 40px; margin-bottom: 12px; }
+  .upload-area strong { font-size: 16px; }
+  .filename { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
 
   .controls {
     display: flex;
     gap: 16px;
     align-items: center;
-    margin-top: 16px;
+    margin-top: 20px;
     flex-wrap: wrap;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
   }
-  .control-group { display: flex; align-items: center; gap: 8px; }
-  label { font-size: 14px; color: #3c3c43; }
+  .control-group {
+    display: flex; align-items: center; gap: 10px;
+  }
+  label { font-size: 14px; color: var(--text); font-weight: 500; }
   input[type=number] {
-    width: 70px;
-    padding: 6px 10px;
-    border: 1px solid #c7c7cc;
-    border-radius: 6px;
+    width: 80px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
     font-size: 14px;
+    font-family: inherit;
+    background: white;
   }
+  input[type=number]:focus { outline: none; border-color: var(--primary); }
+
   button, .btn {
-    background: #007aff;
+    background: var(--primary);
     color: white;
     border: none;
     padding: 10px 20px;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 500;
+    font-family: inherit;
     cursor: pointer;
     text-decoration: none;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s;
   }
-  button:hover, .btn:hover { background: #0056cc; }
-  button:disabled { background: #c7c7cc; cursor: not-allowed; }
+  button:hover, .btn:hover { background: var(--primary-hover); }
+  button:disabled { background: #cbd5e1; cursor: not-allowed; }
 
+  /* Stats grid */
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
   }
   .stat {
-    background: #f5f5f7;
-    border-radius: 8px;
-    padding: 16px;
-    text-align: center;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
   }
-  .stat-num { font-size: 32px; font-weight: 600; }
-  .stat-label { font-size: 12px; color: #6e6e73; text-transform: uppercase; letter-spacing: 0.5px; }
-  .stat.red .stat-num { color: #d32f2f; }
-  .stat.yellow .stat-num { color: #f57c00; }
-  .stat.green .stat-num { color: #388e3c; }
-  .stat.blue .stat-num { color: #007aff; }
+  .stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--text-muted);
+  }
+  .stat.red::before { background: var(--red); }
+  .stat.yellow::before { background: var(--yellow); }
+  .stat.green::before { background: var(--green); }
+  .stat.blue::before { background: var(--blue); }
+  .stat-num {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .stat-pct {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
 
-  .flag-bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 8px 0;
+  /* Chart container */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 20px;
+  }
+  @media (max-width: 768px) {
+    .charts-row { grid-template-columns: 1fr; }
+  }
+  .chart-wrap {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 300px;
+  }
+  .chart-title {
     font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
   }
-  .flag-name { width: 200px; color: #3c3c43; }
-  .flag-bar-bg { flex: 1; height: 18px; background: #e5e5ea; border-radius: 9px; overflow: hidden; }
-  .flag-bar-fill { height: 100%; background: #007aff; border-radius: 9px; }
-  .flag-count { width: 50px; text-align: right; font-weight: 500; }
+  .chart-canvas-wrap {
+    position: relative;
+    height: 280px;
+  }
 
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e5e5ea; }
-  th { background: #f5f5f7; font-weight: 600; color: #3c3c43; position: sticky; top: 0; }
-  tr.alta { background: #ffebee; }
-  tr.revisar { background: #fff8e1; }
-  .motivos { color: #6e6e73; font-size: 12px; max-width: 400px; }
-
-  .hidden { display: none; }
-  .loading {
+  /* Whitelist pills */
+  .pills-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 120px;
+    overflow-y: auto;
+    padding: 4px;
+  }
+  .pill {
     display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #007aff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--green-soft);
+    color: var(--green);
+    border: 1px solid #6ee7b7;
+  }
+
+  /* Table */
+  .table-controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .search-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .search-input:focus { outline: none; border-color: var(--primary); }
+
+  .filter-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-soft);
+    padding: 4px;
+    border-radius: 10px;
+    flex-wrap: wrap;
+  }
+  .filter-tab {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    border: none;
+    background: transparent;
+  }
+  .filter-tab:hover { color: var(--text); }
+  .filter-tab.active {
+    background: white;
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(15,23,42,0.05);
+  }
+
+  .table-wrap {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .table-scroll {
+    max-height: 600px;
+    overflow-y: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    background: var(--bg-soft);
+    font-weight: 600;
+    color: var(--text);
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr:hover { background: var(--bg-soft); }
+  tbody tr.alta { background: rgba(220, 38, 38, 0.04); }
+  tbody tr.alta:hover { background: rgba(220, 38, 38, 0.08); }
+  tbody tr.revisar { background: rgba(217, 119, 6, 0.04); }
+  tbody tr.revisar:hover { background: rgba(217, 119, 6, 0.08); }
+
+  .id-cell { font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 12px; }
+  .ip-cell { font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 12px; color: var(--text-muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .motivos-cell { color: var(--text-muted); font-size: 12px; max-width: 380px; }
+
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .tag.alta { background: var(--red-soft); color: var(--red); }
+  .tag.revisar { background: var(--yellow-soft); color: var(--yellow); }
+  .tag.ok { background: var(--blue-soft); color: var(--blue); }
+  .tag.limpio { background: var(--green-soft); color: var(--green); }
+
+  .score-bar {
+    display: inline-block;
+    width: 50px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
     vertical-align: middle;
     margin-right: 8px;
   }
-  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-  .error { color: #d32f2f; padding: 12px; background: #ffebee; border-radius: 8px; }
-  .scroll { max-height: 500px; overflow-y: auto; }
-
-  .pill {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
+  .score-bar-fill {
+    height: 100%;
+    background: var(--primary);
   }
-  .pill.alta { background: #ffcdd2; color: #c62828; }
-  .pill.revisar { background: #fff9c4; color: #f57f17; }
-  .pill.ok { background: #c8e6c9; color: #2e7d32; }
-  .pill.limpo { background: #e0f2f1; color: #00695c; }
+  .score-cell { display: flex; align-items: center; gap: 6px; }
+  .score-num { font-weight: 600; font-size: 13px; }
+
+  /* Loading & status */
+  .hidden { display: none; }
+  .loading-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error {
+    color: var(--red);
+    padding: 14px;
+    background: var(--red-soft);
+    border-radius: 8px;
+    border: 1px solid #fca5a5;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+  }
+
+  .table-info {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 12px;
+  }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <h1>🔍 Quality Check</h1>
-  <p class="subtitle">Auditoria de qualidade de respostas — pesquisas QuestionPro / SurveyMonkey</p>
+  <div class="header">
+    <h1>🔍 Quality Check</h1>
+    <p>Auditoría de calidad de respuestas — encuestas QuestionPro / SurveyMonkey</p>
+  </div>
 
   <div class="card" id="upload-card">
-    <h2>1. Sube tu archivo .xlsx</h2>
+    <h2>1. Sube tu archivo</h2>
     <label class="upload-area" id="drop-zone">
       <input type="file" id="file-input" accept=".xlsx,.xls">
       <div class="upload-icon">📊</div>
-      <div><strong>Clic aquí o arrastra el archivo</strong></div>
-      <div style="font-size:13px;color:#6e6e73;margin-top:4px;" id="filename">Ningún archivo seleccionado</div>
+      <div><strong>Haz clic aquí o arrastra el archivo .xlsx</strong></div>
+      <div class="filename" id="filename">Ningún archivo seleccionado</div>
     </label>
 
     <div class="controls">
@@ -160,7 +415,9 @@
         <label>Tiempo mínimo aceptable (min):</label>
         <input type="number" id="time-threshold" value="8" min="1" max="60">
       </div>
-      <button id="process-btn" disabled>Analizar</button>
+      <button id="process-btn" disabled>
+        <span>▶</span> Analizar
+      </button>
     </div>
   </div>
 
@@ -169,47 +426,79 @@
   <div id="results" class="hidden">
 
     <div class="card">
-      <h2>📊 Resumen general</h2>
+      <h2>📊 Resumen general
+        <a class="btn" id="download-btn" href="#" style="margin-left:auto;">
+          ⬇️ Descargar Excel
+        </a>
+      </h2>
       <div class="stats-grid" id="stats-grid"></div>
-      <div style="text-align:right;margin-top:16px;">
-        <a class="btn" id="download-btn" href="#">⬇️ Descargar Excel auditado</a>
+    </div>
+
+    <div class="card">
+      <h2>📈 Distribución</h2>
+      <div class="charts-row">
+        <div class="chart-wrap">
+          <div class="chart-title">Clasificación de encuestados</div>
+          <div class="chart-canvas-wrap">
+            <canvas id="chart-pie"></canvas>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Banderas detectadas</div>
+          <div class="chart-canvas-wrap">
+            <canvas id="chart-bar"></canvas>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="card">
-      <h2>🚩 Distribución de banderas</h2>
-      <div id="flags-detail"></div>
-    </div>
-
-    <div class="card">
-      <h2>🤖 Marcas reconocidas como válidas</h2>
-      <p style="font-size:13px;color:#6e6e73;margin-bottom:8px;">
+      <h2>🤖 Marcas reconocidas
+        <span class="badge" id="wl-count"></span>
+      </h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">
         El sistema aprende las marcas de las propias respuestas + lista internacional conocida.
-        <span id="wl-meta"></span>
       </p>
-      <div id="whitelist" style="font-size:13px;line-height:1.8;"></div>
+      <div class="pills-container" id="whitelist"></div>
     </div>
 
     <div class="card">
-      <h2>🔴 Top 20 más sospechosos</h2>
-      <p style="font-size:13px;color:#6e6e73;margin-bottom:12px;">
-        Estos IDs deberías eliminar/revisar primero en la plataforma.
+      <h2>📋 Todos los encuestados
+        <span class="badge" id="table-count"></span>
+      </h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+        Ordenados por puntuación de sospecha. Los IDs en rojo son los que deberías eliminar primero en la plataforma.
       </p>
-      <div class="scroll">
-        <table id="suspects-table">
-          <thead>
-            <tr>
-              <th>ID respuesta</th>
-              <th>IP</th>
-              <th>Tiempo (min)</th>
-              <th>Clasificación</th>
-              <th>Score</th>
-              <th>Motivos</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+
+      <div class="table-controls">
+        <input type="text" class="search-input" id="search" placeholder="🔎 Buscar por ID, IP o motivo...">
+        <div class="filter-tabs" id="filter-tabs">
+          <button class="filter-tab active" data-filter="all">Todos</button>
+          <button class="filter-tab" data-filter="alta">🔴 Alta sospecha</button>
+          <button class="filter-tab" data-filter="revisar">🟡 Revisar</button>
+          <button class="filter-tab" data-filter="ok">🟢 OK con notas</button>
+          <button class="filter-tab" data-filter="limpio">✅ Limpios</button>
+        </div>
       </div>
+
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table id="results-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>IP</th>
+                <th>Tiempo (min)</th>
+                <th>Clasificación</th>
+                <th>Score</th>
+                <th>Motivos</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="table-info" id="table-info"></div>
     </div>
 
   </div>
@@ -222,8 +511,16 @@ const filename = document.getElementById('filename');
 const processBtn = document.getElementById('process-btn');
 const statusDiv = document.getElementById('status');
 const resultsDiv = document.getElementById('results');
-let selectedFile = null;
+const searchInput = document.getElementById('search');
+const filterTabs = document.getElementById('filter-tabs');
 
+let selectedFile = null;
+let allRespondentes = [];
+let currentFilter = 'all';
+let chartPie = null;
+let chartBar = null;
+
+// File pick handlers
 fileInput.addEventListener('change', (e) => {
   if (e.target.files.length) {
     selectedFile = e.target.files[0];
@@ -250,8 +547,10 @@ dropZone.addEventListener('drop', (e) => {
 processBtn.addEventListener('click', async () => {
   if (!selectedFile) return;
   processBtn.disabled = true;
-  statusDiv.className = 'card';
-  statusDiv.innerHTML = '<span class="loading"></span> Analizando archivo... esto puede tomar 10-30 segundos.';
+  statusDiv.className = 'loading-card';
+  statusDiv.classList.remove('hidden');
+  statusDiv.innerHTML = '<div class="spinner"></div><div><strong>Analizando archivo...</strong><br><span style="font-size:13px;color:var(--text-muted);">Esto puede tomar entre 10 y 30 segundos.</span></div>';
+  resultsDiv.classList.add('hidden');
 
   const fd = new FormData();
   fd.append('file', selectedFile);
@@ -261,6 +560,7 @@ processBtn.addEventListener('click', async () => {
     const r = await fetch('/upload', { method: 'POST', body: fd });
     const data = await r.json();
     if (!r.ok) {
+      statusDiv.className = 'card';
       statusDiv.innerHTML = '<div class="error">❌ ' + (data.error || 'Error desconocido') + '</div>';
       processBtn.disabled = false;
       return;
@@ -268,77 +568,204 @@ processBtn.addEventListener('click', async () => {
     statusDiv.classList.add('hidden');
     renderResults(data);
   } catch (err) {
+    statusDiv.className = 'card';
     statusDiv.innerHTML = '<div class="error">❌ Error de red: ' + err.message + '</div>';
     processBtn.disabled = false;
   }
 });
 
+function getClassKey(c) {
+  if (!c) return 'limpio';
+  if (c.includes('Alta')) return 'alta';
+  if (c.includes('Revisar')) return 'revisar';
+  if (c.includes('observa')) return 'ok';
+  return 'limpio';
+}
+
 function renderResults(data) {
   resultsDiv.classList.remove('hidden');
+  allRespondentes = data.respondentes || [];
+
+  const cls = data.classificacoes || {};
+  const altaN = cls['🔴 Alta sospecha'] || cls['🔴 Alta suspeita'] || 0;
+  const revisarN = cls['🟡 Revisar'] || 0;
+  const okN = cls['🟢 OK con observaciones'] || cls['🟢 OK com observações'] || 0;
+  const limpioN = cls['✅ Limpio'] || cls['✅ Limpo'] || 0;
+  const total = data.total;
 
   // Stats grid
-  const cls = data.classificacoes;
   const sg = document.getElementById('stats-grid');
   sg.innerHTML = `
-    <div class="stat blue"><div class="stat-num">${data.total}</div><div class="stat-label">Total</div></div>
-    <div class="stat red"><div class="stat-num">${cls['🔴 Alta suspeita'] || 0}</div><div class="stat-label">Alta sospecha</div></div>
-    <div class="stat yellow"><div class="stat-num">${cls['🟡 Revisar'] || 0}</div><div class="stat-label">Revisar</div></div>
-    <div class="stat"><div class="stat-num">${cls['🟢 OK con observações'] || cls['🟢 OK com observações'] || 0}</div><div class="stat-label">OK con notas</div></div>
-    <div class="stat green"><div class="stat-num">${cls['✅ Limpo'] || 0}</div><div class="stat-label">Limpios</div></div>
+    <div class="stat blue">
+      <div class="stat-num">${total}</div>
+      <div class="stat-label">Total de encuestados</div>
+    </div>
+    <div class="stat red">
+      <div class="stat-num">${altaN}</div>
+      <div class="stat-label">Alta sospecha</div>
+      <div class="stat-pct">${pct(altaN, total)}% del total</div>
+    </div>
+    <div class="stat yellow">
+      <div class="stat-num">${revisarN}</div>
+      <div class="stat-label">Para revisar</div>
+      <div class="stat-pct">${pct(revisarN, total)}% del total</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">${okN}</div>
+      <div class="stat-label">OK con notas</div>
+      <div class="stat-pct">${pct(okN, total)}% del total</div>
+    </div>
+    <div class="stat green">
+      <div class="stat-num">${limpioN}</div>
+      <div class="stat-label">Limpios</div>
+      <div class="stat-pct">${pct(limpioN, total)}% del total</div>
+    </div>
   `;
 
   // Download
   document.getElementById('download-btn').href = '/download/' + data.job_id;
 
-  // Flags detail
+  // Pie chart
+  if (chartPie) chartPie.destroy();
+  chartPie = new Chart(document.getElementById('chart-pie'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Alta sospecha', 'Revisar', 'OK con notas', 'Limpios'],
+      datasets: [{
+        data: [altaN, revisarN, okN, limpioN],
+        backgroundColor: ['#dc2626', '#d97706', '#2563eb', '#059669'],
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 12, font: { size: 12, family: 'Inter' } } }
+      }
+    }
+  });
+
+  // Bar chart - flags
   const flagLabels = {
     flag_ip_duplicado: 'IPs duplicadas',
     flag_tempo_curto: 'Tiempo < ' + data.tempo_minimo_min + ' min',
-    flag_marca_oleo: 'Marca de aceite/automotriz',
+    flag_marca_oleo: 'Marca de aceite',
     flag_gibberish: 'Texto sin sentido',
-    flag_lugar_nao_marca: 'Lugar/institución como marca',
+    flag_lugar_nao_marca: 'Lugar como marca',
     flag_so_simbolos: 'Sólo símbolos',
     flag_muitas_marcas_raras: '3+ marcas raras',
-    flag_copy_paste: 'Copy-paste entre campos',
+    flag_copy_paste: 'Copy-paste',
   };
-  const fd2 = document.getElementById('flags-detail');
-  const maxFlag = Math.max(...Object.values(data.flags));
-  fd2.innerHTML = Object.entries(data.flags).map(([k, v]) => {
-    const pct = maxFlag ? (v / maxFlag * 100) : 0;
-    return `<div class="flag-bar">
-      <div class="flag-name">${flagLabels[k] || k}</div>
-      <div class="flag-bar-bg"><div class="flag-bar-fill" style="width:${pct}%"></div></div>
-      <div class="flag-count">${v}</div>
-    </div>`;
-  }).join('');
+  const flagsData = Object.entries(data.flags || {})
+    .map(([k, v]) => ({ label: flagLabels[k] || k, value: v }))
+    .sort((a, b) => b.value - a.value);
+
+  if (chartBar) chartBar.destroy();
+  chartBar = new Chart(document.getElementById('chart-bar'), {
+    type: 'bar',
+    data: {
+      labels: flagsData.map(f => f.label),
+      datasets: [{
+        label: 'Encuestados',
+        data: flagsData.map(f => f.value),
+        backgroundColor: '#6366f1',
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Inter' } } },
+        y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } }
+      }
+    }
+  });
 
   // Whitelist
-  document.getElementById('wl-meta').textContent =
-    `Marcas reconocidas: ${data.whitelist_size}.`;
+  document.getElementById('wl-count').textContent = data.whitelist_size + ' marcas';
   document.getElementById('whitelist').innerHTML =
-    data.whitelist_sample.map(b => `<span class="pill ok">${b}</span>`).join(' ');
+    (data.whitelist_sample || []).map(b => `<span class="pill">${escapeHtml(b)}</span>`).join('');
 
-  // Suspects table
-  const tbody = document.querySelector('#suspects-table tbody');
-  tbody.innerHTML = data.top_suspeitos.map(r => {
-    let cls = '';
-    let pillCls = 'limpo';
-    if (r.classificacao && r.classificacao.includes('Alta')) { cls = 'alta'; pillCls = 'alta'; }
-    else if (r.classificacao && r.classificacao.includes('Revisar')) { cls = 'revisar'; pillCls = 'revisar'; }
-    else if (r.classificacao && r.classificacao.includes('OK')) { pillCls = 'ok'; }
-    return `<tr class="${cls}">
-      <td>${r['ID de respuesta'] || ''}</td>
-      <td>${r['Dirección IP'] || ''}</td>
-      <td>${r['Tiempo (min)'] || ''}</td>
-      <td><span class="pill ${pillCls}">${r.classificacao || ''}</span></td>
-      <td><strong>${r.score_suspeita || 0}</strong></td>
-      <td class="motivos">${r.motivos || ''}</td>
+  // Table
+  renderTable();
+  processBtn.disabled = false;
+  resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function pct(n, total) {
+  if (!total) return 0;
+  return ((n / total) * 100).toFixed(1);
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderTable() {
+  const search = (searchInput.value || '').toLowerCase().trim();
+  const tbody = document.querySelector('#results-table tbody');
+
+  let filtered = allRespondentes.filter(r => {
+    // filter by classification
+    if (currentFilter !== 'all') {
+      const k = getClassKey(r.classificacao);
+      if (k !== currentFilter) return false;
+    }
+    // search
+    if (search) {
+      const hay = [r['ID de respuesta'], r['Dirección IP'], r.motivos]
+        .map(x => String(x || '').toLowerCase()).join(' ');
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('table-count').textContent = `${filtered.length} de ${allRespondentes.length}`;
+  document.getElementById('table-info').textContent =
+    `Mostrando ${filtered.length} de ${allRespondentes.length} encuestados.`;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">Sin resultados con estos filtros.</div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(r => {
+    const k = getClassKey(r.classificacao);
+    const score = r.score_suspeita || 0;
+    return `<tr class="${k}">
+      <td class="id-cell">${escapeHtml(r['ID de respuesta'])}</td>
+      <td class="ip-cell" title="${escapeHtml(r['Dirección IP'])}">${escapeHtml(r['Dirección IP'])}</td>
+      <td>${escapeHtml(r['Tiempo (min)'])}</td>
+      <td><span class="tag ${k}">${escapeHtml(r.classificacao || '')}</span></td>
+      <td>
+        <div class="score-cell">
+          <div class="score-bar"><div class="score-bar-fill" style="width:${Math.min(100,score)}%"></div></div>
+          <span class="score-num">${score}</span>
+        </div>
+      </td>
+      <td class="motivos-cell">${escapeHtml(r.motivos || '—')}</td>
     </tr>`;
   }).join('');
-
-  processBtn.disabled = false;
-  resultsDiv.scrollIntoView({ behavior: 'smooth' });
 }
+
+searchInput.addEventListener('input', renderTable);
+filterTabs.addEventListener('click', (e) => {
+  if (e.target.classList.contains('filter-tab')) {
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    e.target.classList.add('active');
+    currentFilter = e.target.dataset.filter;
+    renderTable();
+  }
+});
 </script>
 </body>
 </html>
